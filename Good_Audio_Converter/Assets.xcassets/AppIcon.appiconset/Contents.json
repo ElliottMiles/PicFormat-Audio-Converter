@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "Audio_Converter_Icon.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -12,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "Audio_Converter_dark_icon.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
