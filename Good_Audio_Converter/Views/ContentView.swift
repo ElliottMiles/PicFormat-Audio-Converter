@@ -149,7 +149,7 @@ struct ContentView: View {
         var results: [Result<ImportedAudio, Error>] = []
         for url in urls {
             do {
-                let audio = try await AudioImportService.importFile(url: url)
+                let audio = try await AudioImportService.importPickedFile(from: url)
                 results.append(.success(audio))
             } catch {
                 results.append(.failure(error))

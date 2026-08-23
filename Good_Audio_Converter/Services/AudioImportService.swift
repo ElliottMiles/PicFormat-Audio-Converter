@@ -11,6 +11,27 @@ import AVFoundation
 
 enum AudioImportService {
 
+    /// Copies a Files-picker URL into an app-owned `Imports/` directory
+    /// before reading it, rather than trusting whatever undocumented tmp
+    /// location UIDocumentPickerViewController's `asCopy: true` used —
+    /// this is a location FileExportService's stale-sweep actually knows
+    /// about.
+    nonisolated static func importPickedFile(from pickedURL: URL) async throws -> ImportedAudio {
+        let copiedURL = try copyIntoImports(pickedURL)
+        return try await importFile(url: copiedURL)
+    }
+
+    nonisolated private static func copyIntoImports(_ sourceURL: URL) throws -> URL {
+        let importDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Imports", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: importDir, withIntermediateDirectories: true)
+
+        let destination = importDir.appendingPathComponent(sourceURL.lastPathComponent)
+        try FileManager.default.copyItem(at: sourceURL, to: destination)
+        return destination
+    }
+
     nonisolated static func importFile(url: URL, suggestedName: String? = nil) async throws -> ImportedAudio {
         let displayName = suggestedName ?? url.lastPathComponent
         let asset = AVURLAsset(url: url)
