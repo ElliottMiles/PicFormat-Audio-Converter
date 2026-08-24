@@ -63,6 +63,7 @@ struct ResultsView: View {
         }
         .onDisappear {
             viewModel.previewPlayer.stop()
+            viewModel.cleanUpConversionResults()
         }
     }
 

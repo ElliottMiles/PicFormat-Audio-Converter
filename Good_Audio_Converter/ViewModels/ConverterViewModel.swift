@@ -209,4 +209,18 @@ final class ConverterViewModel {
             ? "Saved \(conversionResults[0].filename)."
             : "Saved \(conversionResults.count) files."
     }
+
+    /// Called when the user leaves the results screen — a much more
+    /// reliable "done with this batch" signal than any time-based sweep,
+    /// since it doesn't depend on the app ever being reopened. Doesn't
+    /// wait on Save/Share specifically, so doing both (or neither) from
+    /// the same visit still works: the files stay put until the whole
+    /// screen goes away.
+    func cleanUpConversionResults() {
+        guard let directory = conversionResults.first?.fileURL.deletingLastPathComponent() else { return }
+        conversionResults.removeAll()
+        Task.detached(priority: .utility) {
+            FileExportService.removeDirectory(at: directory)
+        }
+    }
 }

@@ -82,6 +82,14 @@ enum FileExportService {
         removeStaleContents(of: recordingsDir, olderThan: Date().addingTimeInterval(-staleAge), dateKeyPath: \.contentModificationDate)
     }
 
+    /// Deletes a specific batch's output directory outright, no age check
+    /// — called once the app knows a batch is actually done (the user
+    /// left the results screen), rather than waiting for it to age past
+    /// `staleAge` on a future sweep that might not happen for a while.
+    nonisolated static func removeDirectory(at url: URL) {
+        try? FileManager.default.removeItem(at: url)
+    }
+
     nonisolated private static func removeStaleContents(of directory: URL, olderThan cutoff: Date, dateKeyPath: KeyPath<URLResourceValues, Date?>) {
         let fileManager = FileManager.default
         guard let contents = try? fileManager.contentsOfDirectory(
