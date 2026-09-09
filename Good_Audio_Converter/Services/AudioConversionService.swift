@@ -148,19 +148,25 @@ enum AudioConversionService {
 private extension AudioFormat {
     nonisolated func encoderSettings(quality: AudioQuality, sampleRate: Double, channels: Int) -> [String: Any] {
         switch self {
-        case .aac:
-            return [
-                AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: sampleRate,
-                AVNumberOfChannelsKey: channels,
-                AVEncoderBitRateKey: quality.bitRate
-            ]
-        case .alac:
+        // Lossless routes to ALAC — genuinely lossless, not just a high
+        // AAC bitrate — while the other three tiers stay on AAC at
+        // descending bitrates. This is the one place the M4A tile's
+        // quality tier actually picks a codec, not just a setting within
+        // one; see AudioQuality.bitRate's doc comment for why its
+        // `.lossless` case is unused here.
+        case .m4a where quality == .lossless:
             return [
                 AVFormatIDKey: kAudioFormatAppleLossless,
                 AVSampleRateKey: sampleRate,
                 AVNumberOfChannelsKey: channels,
                 AVEncoderBitDepthHintKey: 16
+            ]
+        case .m4a:
+            return [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: channels,
+                AVEncoderBitRateKey: quality.bitRate
             ]
         case .wav:
             return [

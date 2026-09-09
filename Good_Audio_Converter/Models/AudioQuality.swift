@@ -28,24 +28,25 @@ enum AudioQuality: String, CaseIterable, Identifiable {
 
     nonisolated var subtitle: String {
         switch self {
-        case .lossless: return "Near-transparent, largest files"
+        case .lossless: return "No quality loss, largest files"
         case .high: return "Minimal quality loss"
         case .balanced: return "Good tradeoff between size and quality"
         case .maximumCompression: return "Smallest files, more audible quality loss"
         }
     }
 
-    /// Value passed to `AVEncoderBitRateKey` (bits per second).
+    /// Value passed to `AVEncoderBitRateKey` (bits per second) for the
+    /// three AAC-producing tiers. AAC quality doesn't map to file size
+    /// linearly any more than JPEG/HEIC quality does in the image app, so
+    /// these are chosen the same way that app's `encoderQuality` values
+    /// were: standard, widely-recognized bitrate points that step down in
+    /// increasing jumps. 256 kbps is the bitrate Apple Music itself uses
+    /// for AAC and is generally considered perceptually transparent.
     ///
-    /// AAC quality doesn't map to file size linearly any more than
-    /// JPEG/HEIC quality does in the image app, so these are chosen the
-    /// same way that app's `encoderQuality` values were: standard,
-    /// widely-recognized bitrate points that step down in increasing
-    /// jumps. 256 kbps is the bitrate Apple Music itself uses for AAC
-    /// and is generally considered perceptually transparent, so
-    /// "Lossless" here means "as good as this lossy codec gets" — the
-    /// same loose-but-consistent use of that label the image app makes
-    /// for JPEG/HEIC's own top tier.
+    /// `.lossless`'s value here is unused dead weight, kept only so this
+    /// switch stays exhaustive without introducing an optional: M4A
+    /// routes `.lossless` to real ALAC encoding instead of reading this
+    /// property at all — see AudioConversionService's `encoderSettings`.
     nonisolated var bitRate: Int {
         switch self {
         case .lossless: return 256_000

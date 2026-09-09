@@ -30,7 +30,7 @@ enum FormatCapabilityService {
     }
 
     nonisolated static func isAvailable(_ format: AudioFormat) -> Bool {
-        encodableFormatIDs.contains(format.formatID)
+        format.requiredFormatIDs.allSatisfy { encodableFormatIDs.contains($0) }
     }
 
     /// AudioToolbox's live list of format IDs it can currently encode.

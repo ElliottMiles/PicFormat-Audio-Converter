@@ -69,8 +69,9 @@ struct FormatCapabilityServiceTests {
     // itself on every iOS device and the Simulator alike (see the
     // doc comment on FormatCapabilityService for why that's different
     // from the image app's AVIF/WebP situation), so this is expected to
-    // hold everywhere, not just in this environment.
-    @Test func allFourCandidateFormatsAreEncodable() {
+    // hold everywhere, not just in this environment. M4A requires both
+    // AAC and ALAC to be encodable, since its quality tiers span both.
+    @Test func allCandidateFormatsAreEncodable() {
         for format in AudioFormat.allCases {
             #expect(FormatCapabilityService.isAvailable(format), "\(format.displayName) should be encodable")
         }
@@ -169,7 +170,7 @@ struct AudioConversionRoundTripTests {
         }
     }
 
-    @Test func convertsToALACAndPreservesMetadata() async throws {
+    @Test func m4aLosslessTierUsesALACAndPreservesMetadata() async throws {
         let (m4aURL, workDir) = try await Self.makeSourceFixture()
         defer { try? FileManager.default.removeItem(at: workDir) }
 
@@ -179,7 +180,7 @@ struct AudioConversionRoundTripTests {
 
         let destinationURL = workDir.appendingPathComponent("converted.m4a")
         try await AudioConversionService.convert(
-            sourceURL: m4aURL, to: .alac, quality: .lossless, destinationURL: destinationURL, metadata: metadata
+            sourceURL: m4aURL, to: .m4a, quality: .lossless, destinationURL: destinationURL, metadata: metadata
         )
 
         #expect(FileManager.default.fileExists(atPath: destinationURL.path))
@@ -191,6 +192,14 @@ struct AudioConversionRoundTripTests {
         let (title, artist) = await AudioMetadataService.loadTitleAndArtist(from: outputAsset)
         #expect(title == "Test Title")
         #expect(artist == "Test Artist")
+
+        // ALAC is genuinely lossless, so for one second of 44.1kHz audio
+        // it should land well above any AAC bitrate this app offers
+        // (max 256 kbps ≈ 32 KB/s) — a cheap, independent signal that
+        // the Lossless tier actually routed to ALAC and not AAC.
+        let attributes = try FileManager.default.attributesOfItem(atPath: destinationURL.path)
+        let byteCount = (attributes[.size] as? Int) ?? 0
+        #expect(byteCount > 40_000)
     }
 
     @Test func convertsToWAVWithCorrectDuration() async throws {
@@ -215,10 +224,10 @@ struct AudioConversionRoundTripTests {
         let lowURL = workDir.appendingPathComponent("low.m4a")
 
         try await AudioConversionService.convert(
-            sourceURL: m4aURL, to: .aac, quality: .lossless, destinationURL: highURL, metadata: []
+            sourceURL: m4aURL, to: .m4a, quality: .high, destinationURL: highURL, metadata: []
         )
         try await AudioConversionService.convert(
-            sourceURL: m4aURL, to: .aac, quality: .maximumCompression, destinationURL: lowURL, metadata: []
+            sourceURL: m4aURL, to: .m4a, quality: .maximumCompression, destinationURL: lowURL, metadata: []
         )
 
         let highSize = (try? FileManager.default.attributesOfItem(atPath: highURL.path)[.size] as? Int) ?? nil ?? 0

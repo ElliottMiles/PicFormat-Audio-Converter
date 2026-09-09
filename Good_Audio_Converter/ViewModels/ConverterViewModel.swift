@@ -49,7 +49,7 @@ final class ConverterViewModel {
     let previewPlayer = AudioPreviewPlayer()
 
     init() {
-        selectedFormat = availableFormats.first(where: { $0 == .aac }) ?? availableFormats.first
+        selectedFormat = availableFormats.first(where: { $0 == .m4a }) ?? availableFormats.first
     }
 
     var hasAudio: Bool { !importedAudio.isEmpty }

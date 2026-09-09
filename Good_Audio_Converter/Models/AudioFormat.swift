@@ -20,28 +20,29 @@ import AVFoundation
 import UniformTypeIdentifiers
 
 enum AudioFormat: String, CaseIterable, Identifiable, Hashable {
-    case aac
-    case alac
+    case m4a
     case wav
     case aiff
 
     nonisolated var id: String { rawValue }
 
-    /// The Core Audio format ID this case encodes to, used both to drive
-    /// AVAssetWriter's output settings and to check live encoder
-    /// availability via FormatCapabilityService.
-    nonisolated var formatID: AudioFormatID {
+    /// The Core Audio format ID(s) this case can encode to. M4A spans two
+    /// codecs behind one tile — AAC for the three lossy quality tiers,
+    /// Apple Lossless (ALAC) for the Lossless tier — so both must be
+    /// confirmed live-encodable, not just one, for the tile to be fully
+    /// usable. See AudioConversionService's `encoderSettings` for which
+    /// codec a given AudioQuality actually selects.
+    nonisolated var requiredFormatIDs: [AudioFormatID] {
         switch self {
-        case .aac: return kAudioFormatMPEG4AAC
-        case .alac: return kAudioFormatAppleLossless
-        case .wav, .aiff: return kAudioFormatLinearPCM
+        case .m4a: return [kAudioFormatMPEG4AAC, kAudioFormatAppleLossless]
+        case .wav, .aiff: return [kAudioFormatLinearPCM]
         }
     }
 
     /// The container AVAssetWriter should produce.
     nonisolated var fileType: AVFileType {
         switch self {
-        case .aac, .alac: return .m4a
+        case .m4a: return .m4a
         case .wav: return .wav
         case .aiff: return .aiff
         }
@@ -49,7 +50,7 @@ enum AudioFormat: String, CaseIterable, Identifiable, Hashable {
 
     nonisolated var fileExtension: String {
         switch self {
-        case .aac, .alac: return "m4a"
+        case .m4a: return "m4a"
         case .wav: return "wav"
         case .aiff: return "aiff"
         }
@@ -57,8 +58,7 @@ enum AudioFormat: String, CaseIterable, Identifiable, Hashable {
 
     nonisolated var displayName: String {
         switch self {
-        case .aac: return "AAC"
-        case .alac: return "Apple Lossless"
+        case .m4a: return "M4A"
         case .wav: return "WAV"
         case .aiff: return "AIFF"
         }
@@ -66,20 +66,20 @@ enum AudioFormat: String, CaseIterable, Identifiable, Hashable {
 
     nonisolated var shortDescription: String {
         switch self {
-        case .aac: return "Universal, adjustable compression"
-        case .alac: return "Lossless, smaller than WAV/AIFF"
+        case .m4a: return "Lossless or compressed, your choice"
         case .wav: return "Lossless, uncompressed, universal"
         case .aiff: return "Lossless, uncompressed, Apple-friendly"
         }
     }
 
-    /// Whether this format has a meaningful lossy/bitrate dial. ALAC is
-    /// lossless-but-compressed, so — like PNG in the image app — it
-    /// always encodes at full fidelity regardless of the selected tier.
+    /// Whether this format has a meaningful quality dial. M4A's dial
+    /// spans a real codec switch (ALAC at the Lossless tier, AAC below
+    /// it), not just a bitrate change within one codec — see
+    /// AudioConversionService's `encoderSettings`.
     nonisolated var supportsVariableQuality: Bool {
         switch self {
-        case .aac: return true
-        case .alac, .wav, .aiff: return false
+        case .m4a: return true
+        case .wav, .aiff: return false
         }
     }
 }
