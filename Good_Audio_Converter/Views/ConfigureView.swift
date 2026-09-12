@@ -9,6 +9,8 @@ struct ConfigureView: View {
     @Bindable var viewModel: ConverterViewModel
     var onConverted: () -> Void
 
+    @FocusState private var isFilenameFocused: Bool
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -26,10 +28,18 @@ struct ConfigureView: View {
             }
             .padding()
         }
+        // `.scrollDismissesKeyboard` only fires on an actual scroll drag;
+        // the `simultaneousGesture` below is what also dismisses on a tap
+        // directly on a format/quality control without scrolling first —
+        // `simultaneous` specifically so it doesn't steal the touch from
+        // those controls' own tap handling.
+        .scrollDismissesKeyboard(.immediately)
+        .simultaneousGesture(TapGesture().onEnded { isFilenameFocused = false })
         .navigationTitle("Choose Format")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             Button {
+                isFilenameFocused = false
                 Task {
                     await viewModel.convert()
                     if viewModel.hasResults {
@@ -97,6 +107,7 @@ struct ConfigureView: View {
             TextField(viewModel.isBatch ? "e.g. Podcast" : "e.g. MyRecording", text: $viewModel.outputBaseName)
                 .textFieldStyle(.roundedBorder)
                 .autocorrectionDisabled()
+                .focused($isFilenameFocused)
 
             if let format = viewModel.selectedFormat {
                 Text(viewModel.isBatch
